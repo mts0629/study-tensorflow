@@ -1,3 +1,8 @@
+"""
+The first example of Tensorflow 
+
+classification of MNIST dataset
+"""
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +13,7 @@ mnist = tf.keras.datasets.mnist
 # load training/test data
 (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-# preprocess, reshape and scaling to [0, 1]
+# preprocess, reshape and scaling the data value to [0, 1]
 train_images = train_images.reshape(-1, 28 * 28) / 255.0
 test_images  = test_images.reshape(-1, 28 * 28) / 255.0
 

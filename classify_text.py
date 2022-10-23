@@ -1,5 +1,5 @@
 """
-sentiment analysis (positive/negative)  of text data
+text classification: sentiment analysis
 """
 import matplotlib.pyplot as plt
 import os
