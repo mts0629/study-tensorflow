@@ -1,83 +1,48 @@
 """
-The first example of Tensorflow 
-
-classification of MNIST dataset
+Tensorflow 2 quickstart
 """
+# Setup the TensorFlow
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-# load MNIST dataset
+# Load the MNIST dataset
 mnist = tf.keras.datasets.mnist
 
-# load training/test data
-(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+(x_train, y_train) = (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
 
-# preprocess, reshape and scaling the data value to [0, 1]
-train_images = train_images.reshape(-1, 28 * 28) / 255.0
-test_images  = test_images.reshape(-1, 28 * 28) / 255.0
-
-# define a sequential model
+# Build a machine learning model
 model = tf.keras.models.Sequential([
     tf.keras.layers.Dense(128, activation='relu', input_shape=(28 * 28,)),
     tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(10)
-])
+    tf.keras.layers.Dense(10)])
 
-# configure the model
-model.compile(
-    optimizer=tf.keras.optimizers.Adam(),
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=[tf.metrics.SparseCategoricalAccuracy()]
-)
+# Print logits
+predictions = model(x_train[:1]).numpy()
+print(predictions)
+
+# Print probabilities
+print(tf.nn.softmax(predictions).numpy())
+
+# Define a loss function
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+print(loss_fn(y_train[:1], predictions).numpy())
+
+model.compile(optimizer='adam',
+    loss=loss_fn,
+    metrics=['accuracy'])
+
 print(model.summary())
 
-# train the model
-model.fit(train_images, train_labels, epochs=5)
+# Train and evaluate the model
+model.fit(x_train, y_train, epochs=5)
 
-# evaluate the model with test data
-test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=2)
-print("\nTest Loss %0.2f, Test Accuracy %0.2f" % (test_loss, test_accuracy))
+print(model.evaluate(x_test, y_test, verbose=2))
 
-# append a softmax to output probability
+# Attach the softmax to the trained model to return probability
 probability_model = tf.keras.Sequential([
     model,
-    tf.keras.layers.Softmax()
-])
+    tf.keras.layers.Softmax()])
 
-# predict
-predictions = probability_model.predict(test_images)
-
-# create a confusion matrix
-confusion_matrix = np.zeros((10, 10), dtype=np.int32)
-for prediction, true_label in zip(predictions, test_labels):
-    predicted_label = np.argmax(prediction)
-    confusion_matrix[true_label, predicted_label] += 1
-
-# plot a heatmap
-fig, ax = plt.subplots()
-axis = [n + 0.5 for n in range(10)]
-ax.set_xticks(axis)
-ax.set_yticks(axis)
-axis_labels = [str(n) for n in range(10)]
-ax.set_xticklabels(axis_labels)
-ax.set_yticklabels(axis_labels)
-
-ax.set_xlabel("predicted label")
-ax.set_ylabel("true label")
-
-ax.xaxis.tick_top()
-ax.invert_yaxis()
-
-heatmap = ax.imshow(confusion_matrix)
-
-for i in range(10):
-  for j in range(10):
-    text = ax.text(j, i, confusion_matrix[i, j], ha="center", va="center", color="w")
-fig.tight_layout()
-
-plt.show()
-
-# save the entire model as a SavedModel format
-model.save("./mnist")
-
+print(probability_model(x_test[:5]))

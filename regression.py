@@ -1,6 +1,5 @@
 """
-regression
-predict the fuel efficiency of automobiles with the Auto MPG dataset
+Basic regression: Predict fuel efficiency
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +14,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+# The Auto MPG dataset
+# Get the data
 url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data'
 column_names = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight',
                'Aceleration', 'Model Year', 'Origin']
@@ -24,15 +25,16 @@ raw_dataset = pd.read_csv(url, names=column_names,
                           sep=' ', skipinitialspace=True)
 
 dataset = raw_dataset.copy()
-dataset.tail()
+print(dataset.tail())
 
-# clean the data
-dataset.isna().sum()
+# Clean the data
+print(dataset.isna().sum())
 
+# Drop N/A rows
 dataset = dataset.dropna()
-dataset['Origin'] = dataset['Origin'].map({1: 'USA', 2: 'Europe', 3: 'Japan'})
 
-# convert categorical variable into dummy/indicator variables
+# Adopt one-hot encode the values in the column
+dataset['Origin'] = dataset['Origin'].map({1: 'USA', 2: 'Europe', 3: 'Japan'})
 dataset = pd.get_dummies(dataset, columns=['Origin'], prefix='', prefix_sep='')
 dataset.tail()
 
@@ -44,7 +46,7 @@ test_dataset  = dataset.drop(train_dataset.index)
 sns.pairplot(train_dataset[['MPG', 'Cylinders', 'Displacement', 'Weight']], diag_kind='kde')
 train_dataset.describe().transpose()
 
-# Split features and labels
+# Split features from labels
 train_features = train_dataset.copy()
 test_features  = test_dataset.copy()
 
@@ -53,32 +55,41 @@ test_labels  = test_features.pop('MPG')
 
 train_dataset.describe().transpose()[['mean', 'std']]
 
-# create normalization layer
+# The Normalization layer
 normalizer = tf.keras.layers.Normalization(axis=-1)
 normalizer.adapt(np.array(train_features))
+# Calculate the mean and variance, and store them in the layer
 print(normalizer.mean.numpy())
 
+# When the layer is called, it return the input data, with each feature
+# independently normalized
 first = np.array(train_features[:1])
 with np.printoptions(precision=2, suppress=True):
     print('First example:', first)
     print()
     print('Normalized:', normalizer(first).numpy())
 
-# linear regression with one variable ("Horsepower")
+# Linear regression
+# Predict 'MPG' from 'Horsepower'
 horsepower = np.array(train_features['Horsepower'])
 horsepower_normalizer = layers.Normalization(input_shape=[1,], axis=None)
 horsepower_normalizer.adapt(horsepower)
 
+# Build the Keras Sequential model
 horsepower_model = tf.keras.Sequential([
     horsepower_normalizer,
-    layers.Dense(units=1)
-])
-horsepower_model.summary()
+    layers.Dense(units=1)])
 
-#horsepower_model.predict(horsepower[:10])
+print(horsepower_model.summary())
 
+# Print the shape of output
+print(horsepower_model.predict(horsepower[:10]))
+
+# Mean squared error (MSE) or mean absolute error (MAE) are
+# common loss functions used for regression problems
 horsepower_model.compile(
     optimizer=tf.optimizers.Adam(learning_rate=0.1),
+    # MAE is less sensitive to outliers
     loss='mean_absolute_error')
 
 history = horsepower_model.fit(
@@ -90,34 +101,32 @@ history = horsepower_model.fit(
     # Calculate validation results on 20% of the learning data
     validation_split = 0.2)
 
-# check contents of history
-#hist = pd.DataFrame(history.history)
-#hist['epoch'] = history.epoch
-#hist.tail()
+# Visualize the model's training progress
+# using the stats stored in the history object
+hist = pd.DataFrame(history.history)
+hist['epoch'] = history.epoch
+print(hist.tail())
 
-# plot loss
 def plot_loss(history):
     plt.figure()
-    plt.plot(history.history['loss'], label='loss')
-    plt.plot(history.history['val_loss'], label='val_loss')
     plt.ylim([0, 10])
     plt.xlabel('Epoch')
     plt.ylabel('Error [MPG]')
     plt.legend()
     plt.grid(True)
 
+    plt.plot(history.history['loss'], label='loss')
+    plt.plot(history.history['val_loss'], label='val_loss')
+
 plot_loss(history)
 
-# store results
+# Collect the results
 test_results = {}
 test_results['horsepower_model'] = horsepower_model.evaluate(
     test_features['Horsepower'],
     test_labels, verbose=0)
 
-x = tf.linspace(0.0, 250, 251)
-y = horsepower_model.predict(x)
-
-# plot prediction
+# Plot predictions
 def plot_horsepower(x, y):
     plt.figure()
     plt.scatter(train_features['Horsepower'], train_labels, label='Data')
@@ -126,16 +135,19 @@ def plot_horsepower(x, y):
     plt.ylabel('MPG')
     plt.legend()
 
+x = tf.linspace(0.0, 250, 251)
+y = horsepower_model.predict(x)
+
 plot_horsepower(x, y)
 
-# linear regression with multiple inputs
+# Linear regression with multiple inputs
 linear_model = tf.keras.Sequential([
     normalizer,
-    layers.Dense(units=1)
-])
+    layers.Dense(units=1)])
 
-#linear_model.predict(train_features[:10])
-#linear_model.layers[1].kernel
+# Print the shape of output and kernel weights
+print(linear_model.predict(train_features[:10]))
+print(linear_model.layers[1].kernel)
 
 linear_model.compile(
     optimizer=tf.optimizers.Adam(learning_rate=0.1),
@@ -153,23 +165,22 @@ plot_loss(history)
 test_results['linear_model'] = linear_model.evaluate(
     test_features, test_labels, verbose=0)
 
-# regression by DNN
+# Regression by DNN
 def build_and_compile_model(norm):
     model = keras.Sequential([
         norm,
         layers.Dense(64, activation='relu'),
         layers.Dense(64, activation='relu'),
-        layers.Dense(1),
-    ])
+        layers.Dense(1),])
 
     model.compile(loss='mean_absolute_error',
                   optimizer=tf.keras.optimizers.Adam(0.001))
 
     return model
 
-# regression by DNN with 1 input
+# Regression using a DNN and a single input
 dnn_horsepower_model = build_and_compile_model(horsepower_normalizer)
-dnn_horsepower_model.summary()
+print(dnn_horsepower_model.summary())
 
 history = dnn_horsepower_model.fit(
     train_features['Horsepower'],
@@ -189,9 +200,9 @@ test_results['dnn_horsepower_model'] = dnn_horsepower_model.evaluate(
     test_features['Horsepower'], test_labels,
     verbose=0)
 
-# regression by DNN with multiple inputs
+# Regression by DNN with multiple inputs
 dnn_model = build_and_compile_model(normalizer)
-dnn_model.summary()
+print(dnn_model.summary())
 
 history = dnn_model.fit(
     train_features,
@@ -204,14 +215,13 @@ plot_loss(history)
 
 test_results['dnn_model'] = dnn_model.evaluate(test_features, test_labels, verbose=0)
 
-# compare loss for all models
+# Performance
 pd.DataFrame(test_results, index=['Mean absolute error [MPG]']).T
 
-# predict with the model
+# Make predictions
 test_predictions = dnn_model.predict(test_features).flatten()
 
-# plot true values and predictions
-# with scatter plot
+# Plot true values and predictions with a scatter plot
 plt.figure()
 a = plt.axes(aspect='equal')
 plt.scatter(test_labels, test_predictions)
@@ -222,16 +232,17 @@ plt.xlim(lims)
 plt.ylim(lims)
 _ = plt.plot(lims, lims)
 
-# with histogram
+# Check the error distribution with a histogram
 plt.figure()
 error = test_predictions - test_labels
 plt.hist(error, bins=25)
 plt.xlabel('Prediction Error [MPG]')
 _ = plt.ylabel('Count')
 
-# save the model
+# Save the model
 dnn_model.save('dnn_model')
-# evaluate again with the reloaded model
-#reloaded = tf.keras.models.load_model('dnn_model')
-#test_results['reloaded'] = reloaded.evaluate(test_features, test_labels, verbose=0)
-#pd.DataFrame(test_results, index=['Mean absolute error [MPG]']).T
+
+# Re-evaluate with a reloaded model
+reloaded = tf.keras.models.load_model('dnn_model')
+test_results['reloaded'] = reloaded.evaluate(test_features, test_labels, verbose=0)
+pd.DataFrame(test_results, index=['Mean absolute error [MPG]']).T

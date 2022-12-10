@@ -1,7 +1,7 @@
 """
 Introduction to the Keras Tuner
 """
-
+# Setup
 import tensorflow as tf
 from tensorflow import keras
 
@@ -12,7 +12,7 @@ import keras_tuner as kt
 
 # Normalize
 img_train = img_train.astype('float32') / 255.0
-img_test = img_test.astype('float32') / 255.0
+img_test  = img_test.astype('float32') / 255.0
 
 # Define the model
 def model_builder(hp):
