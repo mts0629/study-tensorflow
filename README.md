@@ -1,4 +1,3 @@
-# learning_tensorflow
+# tensorflow-tutorial
 
-Learning example of Tensorflow
-
+Tutorial of Tensorflow
