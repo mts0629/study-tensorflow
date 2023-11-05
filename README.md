@@ -2,7 +2,7 @@
 
 TensorFlowの学習
 
-[Tutorials | TensorFlow Core](https://www.tensorflow.org/tutorials?hl=en)
+- [Tutorials | TensorFlow Core](https://www.tensorflow.org/tutorials?hl=en)
     - [日本語版](https://www.tensorflow.org/tutorials?hl=ja)
 
 ## ソースコード
