@@ -1,0 +1,16 @@
+{
+    "name": "tensorflow-gpu-jupyter",
+    "build": {
+        "dockerfile": "../docker/Dockerfile"
+    },
+    "remoteUser": "dev",
+    "updateRemoteUserUID": true,
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "type=bind,src=${localWorkspaceFolder},dst=/workspace",
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    },
+    "runArgs": [
+        "--gpus", "all"
+    ]
+}
