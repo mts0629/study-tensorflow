@@ -9,6 +9,9 @@ ENV TZ Asia/Tokyo
 RUN apt-get install -y git vim && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists*
+RUN pip install ipykernel \
+    pydot pydotplus graphviz \
+    tensorflow_datasets tensorflow_text
 
 # Add a non-root user (overwrite by Dev Container)
 ARG USER=dev
